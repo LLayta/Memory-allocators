@@ -21,14 +21,23 @@ We threw the word "heap" around a lot, but actually is the heap? The heap is a s
 # Types of memory allocators:
 So lets get into what they actually look in code and their types.
 
-### Linear allocator / bump allocators / arena allocators:
+## Linear allocator / bump allocators / arena allocators:
 Linear allocators are allocators that allocate a chunk of memory deteremined by a given size that you index into with a pointer. You generally keep track of 3 different points. A pointer to the start of the allocated buffer, a current pointer that keeps track of the current pointer we have into the memory space. And an end pointer to make sure we don't write the current pointer past the memory space we defined.
 
-### Free list allocators:
- * Implicit free list:
- * Explicit free list:
+### Allocation:
+### Deallocation:
+### Pros:
+### Cons:
 
+## Free list allocators:
+Free-list allocators are a technique for memory allocators where we store the allocation chunks in a linked list. The linked list nodes would generally contain a size field (keeps track of the size of the chunk), is freed field (to determine if the currently looked at chunk is free or not), and a next pointer (next node in the linked list). Now there are 2 types of free-list allocators, those being: explicit and implicit free lists.
 
+* Implicit free list: Implicitly defines a structure of chunks that strictly points to free'd nodes.
+* Explicit free list: Explicitly defines a structure of chunks that contain free and used nodes and are differentiated between with a flag determining if the currently loked at node is free or not.
+
+### Allocation:
+
+### Deallocation:
 
 # Why would we write our own?
 
