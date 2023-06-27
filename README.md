@@ -18,10 +18,17 @@ The "memory-mapped region" can also hold our heap data. But the section labeled 
 # What's the heap?
 We threw the word "heap" around a lot, but actually is the heap? The heap is a sesction of memory in our process that is constructed through the utilization of those functions / system calls we mentioned. Values stored on the heap are loaded at runtime.
 
-### Types of memory allocators:
+# Types of memory allocators:
 So lets get into what they actually look in code and their types.
 
-# Linear allocator / bump allocators / arena allocators:
+### Linear allocator / bump allocators / arena allocators:
+Linear allocators are allocators that allocate a chunk of memory deteremined by a given size that you index into with a pointer. You generally keep track of 3 different points. A pointer to the start of the allocated buffer, a current pointer that keeps track of the current pointer we have into the memory space. And an end pointer to make sure we don't write the current pointer past the memory space we defined.
+
+### Free list allocators:
+ * Implicit free list:
+ * Explicit free list:
+
+
 
 # Why would we write our own?
 
