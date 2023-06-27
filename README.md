@@ -11,10 +11,17 @@ Memory allocators (typically) utilize a part of processes' memory space called t
 
 # Addressing space visualization:
 ![Addressing space](imgs/figure1.png)
+figure1.
+
+The "memory-mapped region" can also hold our heap data. But the section labeled "heap" is where we can store heap data through sbrk. 
 
 # What's the heap?
+We threw the word "heap" around a lot, but actually is the heap? The heap is a sesction of memory in our process that is constructed through the utilization of those functions / system calls we mentioned. Values stored on the heap are loaded at runtime.
 
-# Types of memory allocators:
+### Types of memory allocators:
+So lets get into what they actually look in code and their types.
+
+# Linear allocator / bump allocators / arena allocators:
 
 # Why would we write our own?
 
