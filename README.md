@@ -10,7 +10,7 @@ Memory allocators (typically) utilize a part of processes' memory space called t
   * sbrk function: Alters the program break to allocate space directly above the data segment. (Program break is a pointer to the top of the data segment on the first allocation but after allocations it'll be a pointer to the top of the heap). See figure.1 for visualization.
 
 # Addressing space visualization:
-![Addressing space](imgs/figure1)
+![Addressing space](imgs/figure1.png)
 
 # What's the heap?
 
