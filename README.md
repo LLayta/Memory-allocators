@@ -106,25 +106,38 @@ Why would we write our own? Given memory allocator interfaces such as: ``malloc 
 
 #define align_to_word(size) (size + (sizeof(void *) - 1)) & ~(sizeof(void *) - 1)
 
+#define LASSERT(condition, msg) \
+    do \
+    { \
+        if(!(condition)) \
+        { \
+            fprintf(stderr, \
+			        "[*] Process terminated! 'LASSERT()' failed!\n" \
+			        "Condition\t: {%s}\n" \
+			        "Function\t: {%s}\n" \
+			        "Failed in file\t: {%s}\n" \
+			        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \
+            fprintf(stderr, "Debug log: %s\n", msg); \
+            exit(1); \
+        } \
+    } while(0) \
+
+
 typedef struct _Allocator_t {
-    char *start, *end, *curr;
     size_t capacity;
+    char *start, *end, *curr;
 } Allocator_t;
 
 Allocator_t *new_allocator(size_t capacity) {
-    if(!capacity) {
-        return NULL;
-    }
+    LASSERT(capacity, "Invalid allocation size!");
 
     Allocator_t *alloc = calloc(1, sizeof(*alloc));
-    if(!alloc) {
-        return NULL;
-    }
+    
+    LASSERT(alloc, "Failed to allocate space for struct!");
     
     alloc->start = malloc(capacity);
-    if(!alloc->start) {
-        return NULL;
-    }
+
+    LASSERT(alloc->start, "Failed to allocate space for buffer!");
 
     alloc->capacity = capacity;
     alloc->curr = alloc->start;
@@ -134,15 +147,15 @@ Allocator_t *new_allocator(size_t capacity) {
 }
 
 void *allocator_alloc(Allocator_t *alloc, size_t offset) {
-    if(!alloc || !offset) {
-        return NULL;
-    }
+    LASSERT(alloc && offset, "Invalid parameter(s)!");
 
     offset = align_to_word(offset);
 
     if(offset > alloc->capacity) {
         return NULL;
     }
+
+    LASSERT(offset <= alloc->capacity, "Allocating more space than initialized with!");
     
     if(alloc->curr + offset <= alloc->end) {
         char *tmp = alloc->curr;
@@ -155,31 +168,25 @@ void *allocator_alloc(Allocator_t *alloc, size_t offset) {
 }
 
 void allocator_reset(Allocator_t *alloc) {
-    if(!alloc || !alloc->start) {
-        return;
-    }
-
-    free(alloc->start);
+    LASSERT(alloc, "Trying to reset an invalid struct!");
+    
     alloc->curr  = NULL;
     alloc->end   = NULL;
     alloc->start = NULL;
 }
 
-void print_state(Allocator_t *alloc) {
-    if(!alloc) {
-        return;
-    }
+void delete_allocator(Allocator_t *alloc) {
+    LASSERT(alloc, "Trying to free an unallocated struct!");
 
-    printf("Curr: %p\n"
-           "Start: %p\n"
-           "End: %p\n", alloc->curr, alloc->start, alloc->end);
+    free(alloc->start);
+    free(alloc);
 }
 ```
 
 Example usage:
 ```c
 int main(void) {
-    Allocator_t *alloc = new_allocator(100);
+       Allocator_t *alloc = new_allocator(100);
     
     int *ptr1 = allocator_alloc(alloc, 5 * sizeof(int));
     for(int i = 0; i < 5; ++i) {
@@ -189,7 +196,7 @@ int main(void) {
 
     putchar('\n');
 
-    char char_arr[] = { 'a', 'b', 'c', 'e', 'd'},
+    char char_arr[] = { 'a', 'b', 'c', 'e', 'd' },
     *ptr2 = allocator_alloc(alloc, 5);
     
     for(int i = 0; i < 5; ++i) {
@@ -200,18 +207,14 @@ int main(void) {
     putchar('\n');
 
     double double_arr[] = { 10.00, 20.00, 30.00, 40.00, 50.00 },
-    *ptr3 = allocator_alloc(alloc, 5 * sizeof(int));
+    *ptr3 = allocator_alloc(alloc, 5 * sizeof(double));
 
     for(int i = 0; i < 5; ++i) {
         ptr3[i] = double_arr[i];
         printf("Ptr3[%d] => %lf\n", i, ptr3[i]);
     }
 
-    putchar('\n');
-
-    print_state(alloc);
-    allocator_reset(alloc);
-    print_state(alloc);
+    delete_allocator(alloc);
 }
 ```
 
@@ -242,11 +245,11 @@ typedef struct _free_list_t {
         if(!(condition)) \
         { \
             fprintf(stderr, \
-			        "[*] Process terminated! 'LASSERT()' failed!\n" \
-			        "Condition\t: {%s}\n" \
-			        "Function\t: {%s}\n" \
-			        "Failed in file\t: {%s}\n" \
-			        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \
+		"[*] Process terminated! 'LASSERT()' failed!\n" \
+		"Condition\t: {%s}\n" \
+	        "Function\t: {%s}\n" \
+		"Failed in file\t: {%s}\n" \
+	        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \
             fprintf(stderr, "Debug log: %s\n", msg); \
             exit(1); \
         } \
@@ -254,7 +257,7 @@ typedef struct _free_list_t {
 
 free_list_t free_list = { .head = NULL, .tail = NULL };
 
-static inline __always_inline chunk_t *first_fit(size_t size) {
+static __always_inline chunk_t *first_fit(size_t size) {
     LASSERT(size, "Invalid size!");
  
     for(chunk_t *tmp = free_list.head; tmp; tmp = tmp->fd) {
@@ -266,7 +269,7 @@ static inline __always_inline chunk_t *first_fit(size_t size) {
     return NULL;
 }
 
-static inline __always_inline void insert_chunk(chunk_t *chunk) {
+static __always_inline void insert_chunk(chunk_t *chunk) {
     LASSERT(chunk, "Chunk is NULL");
 
     if(!free_list.head) {
@@ -318,7 +321,6 @@ void dsma_free(void *addr) {
     chunk_t *header = (chunk_t *)addr - 1;
     header->is_free = true;
 }
-
 ```
 
 Example usage:
