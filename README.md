@@ -2,7 +2,7 @@
 Educational repository to briefly go over practical implementations of memory allocators and theoretical background of them.
 
 # Why?
-Why do we care about memory allocators? Memory allocators are an interface that allow us to preform *dynamic memory allocation* which is when we store long lived values in a programs' memory that is **not** the stack which is automatically sized at compile-time, the size of dynamically allocated memory is deteremined at run-time. 
+Why do we care about memory allocators? Memory allocators are an interface that allow us to preform *dynamic memory allocation* which is when we store long lived values in a programs' memory. The size of these allocations are determined at run-time. 
 
 # How?
 Memory allocators (typically) utilize a part of processes' memory space called the "heap". We can dynamically allocate data onto the heap in 2 main ways on linux:
@@ -38,10 +38,13 @@ typedef struct _linear_allocator {
 
 ### Allocation:
 The allocation would consist of altering the ``curr`` pointer by some amount
+
 ### Deallocation:
 The deallocation would be resetting the pointers. We can't individually free allocations, we have to free the entire chunk at the same time. It would look like ``start = curr = end = 0;``
+
 ### Pros:
 Extremely fast and a nice layer of abstraction which provides an easy use where instead of doing multiple allocations and storing information, we allocate 1 big chunk and index into it.
+
 ### Cons:
 We can't individually free allocations in any order. We have to reset the entire chunk. 
 
@@ -61,11 +64,20 @@ typedef struct _chunk_t {
 } chunk_t;
 ```
 
-Upon initial allocation you'd mmap or sbrk a new chunk and insert it at the head later allocations you'll search the linked list of chunks to find a "free node". The algorithms for finding these free chunks are called free block searching algorithms. Some of these algorithms are such:
+Upon initial allocation you'd mmap or sbrk a new chunk and insert it at the head later allocations you'll search the linked list of chunks to find a "free node". The algorithms for finding these free chunks are called free chunk searching algorithms. Some of these algorithms are such:
   * First fit: 
   * Best fit:
-  & Worst fit
+  * Worst fit:
 
+### Deallocation:
+### Pros:
+### Cons:
+
+### Notes:
+Tons of modern memory allocators such as ``ptmalloc`` and ``dlmalloc`` use this type of allocator. Some allocators implemnet binning to store certain lengths of chunk ranges for quick access of free list. Some implement seperate linked lists for different sizes for even faster access to free chunks. Some implement a binary search tree that orders based on size or chunk address. A lot of allocators implement block splitting from recently fetched searching operations. A common optimization that ``free`` would implement would be block coalescing, where we conbaine adjencet free chunks into a big free chunk and mark it as new.There are a ton of optimizations in this field.
+
+## Pool allocators:
+### Allocation:
 ### Deallocation:
 ### Pros:
 ### Cons:
@@ -73,5 +85,6 @@ Upon initial allocation you'd mmap or sbrk a new chunk and insert it at the head
 # Fragmentation:
 
 # Why would we write our own?
+Why would we wriute our own? Given memory allocator interfaces such as: ``malloc / free()``
 
 # Implementations:
