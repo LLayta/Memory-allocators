@@ -100,42 +100,4 @@ void dsma_free(void *addr) {
     header->is_free = true;
 }
 
-void print_state(void) {
-    if(!free_list.tail) {
-        puts("Empty free list!");
-    }
-    
-    for(int i = 0; free_list.head; free_list.head = free_list.head->fd, ++i) {
-        printf("[%d]: fd = %p\n"
-               "[%d]: size = %zu\n"
-               "[%d]: is_used = %s\n", 
-               i, (void *) free_list.head->fd, 
-               i, free_list.head->size, 
-               i, free_list.head->is_free ? "freed" : "Not freed");
-
-        putchar(0xa);
-    }
-}
-
-int main(void) {
-    int *ptr1 = dsma_alloc(16);
-    *ptr1 = 5;
-
-    int *ptr2 = dsma_alloc(100);
-    *ptr2 = 10;
-
-    int *ptr3 = dsma_alloc(8);
-    *ptr3 = 20;
-
-    int *ptr4 = dsma_alloc(4);
-    *ptr4 = 30;
-
-    print_state();
-
-    dsma_free(ptr1);
-    dsma_free(ptr2);
-    dsma_free(ptr3);
-    dsma_free(ptr4);
-
-    print_state();
-}
+int main(void) {}
