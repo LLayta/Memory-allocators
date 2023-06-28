@@ -116,7 +116,7 @@ Why would we write our own? Given memory allocator interfaces such as: ``malloc 
 		"Condition\t: {%s}\n" \
 	        "Function\t: {%s}\n" \
 		"Failed in file\t: {%s}\n" \
-	        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \		
+	        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \
             fprintf(stderr, "Debug log: %s\n", msg); \
             exit(1); \
         } \
