@@ -112,11 +112,11 @@ Why would we write our own? Given memory allocator interfaces such as: ``malloc 
         if(!(condition)) \
         { \
             fprintf(stderr, \
-			        "[*] Process terminated! 'LASSERT()' failed!\n" \
-			        "Condition\t: {%s}\n" \
-			        "Function\t: {%s}\n" \
-			        "Failed in file\t: {%s}\n" \
-			        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \
+		"[*] Process terminated! 'LASSERT()' failed!\n" \
+		"Condition\t: {%s}\n" \
+	        "Function\t: {%s}\n" \
+		"Failed in file\t: {%s}\n" \
+	        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \		
             fprintf(stderr, "Debug log: %s\n", msg); \
             exit(1); \
         } \
