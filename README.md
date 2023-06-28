@@ -3,6 +3,9 @@ Educational repository to briefly go over practical implementations of memory al
 
 # Contents 
 [Why?](#Why?)
+
+#[How?](#How?)
+
 [Implementations](#Implementations)
 
 # Why?
