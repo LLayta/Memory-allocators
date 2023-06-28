@@ -32,7 +32,7 @@ A general structure for a linear allocation would be as such:
 
 ```c
 typedef struct _linear_allocator {
-  char *start, curr, end;
+  char *start, *curr, *end;
 } Linear_allocator;
 ```
 
