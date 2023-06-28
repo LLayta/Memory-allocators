@@ -3,6 +3,7 @@ Educational repository to briefly go over practical implementations of memory al
 
 # Contents 
 [Why?](#Why?)
+[Implementations](#Implementations)
 
 # Why?
 Why do we care about memory allocators? Memory allocators are an interface that allow us to preform *dynamic memory allocation* which is when we store long lived values in a programs' memory. The size of these allocations are determined at run-time. 
