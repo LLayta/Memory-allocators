@@ -17,21 +17,21 @@ The "memory-mapped region" stores mmap'd chunks.
 The section labeled "heap" stores the sbrk allocated chunks.
 
 Sbrk is ideal for allocating smaller chunks because it consists of simply adding or subtracting from a pointer.
-Mmap is ideal for really large chunk alloctations that are around 4096 bytes worth of allocation space.
+Mmap is ideal for really large chunk allocations that are around 4096 bytes worth of allocation space.
 
 # What's the heap?
-We threw the word "heap" around a lot, but actually is the heap? The heap is a sesction of memory in our process that is constructed through the utilization of those functions / system calls we mentioned. Values stored on the heap are loaded at runtime.
+We threw the word "heap" around a lot, but what actually is the heap? The heap is a section of memory in our process that is constructed through the utilization of those functions / system calls we mentioned previously. Values stored on the heap are stored at run-time.
 
 # Fragmentation
-A concept we need to preface over before deeping into memory allocator implementations would be fragementation. This is a major trade-off space when it comes to designing allocators. Fragmentation is a situation where we use memory inefficiently, we either have to go through extra measures to get the right memory allocation size or we don't have a right memory allocation size to begin with. 2 main types of fragmentation are such:
+A concept we need to preface over before stepping into memory allocator implementations would be fragementation. This is a major trade-off when it comes to designing allocators. Fragmentation is a situation where we use memory inefficiently, we either have to go through extra measures to get the right sized chunks return or we end up allocating too much memory. 2 main types of fragmentation are such:
   * External fragmentation: Resulting chunk had to have been split to satisfy the size constraint. 
   * Internal fragmnetation: Resulting chunk was larger than what requested, leading to unused memory.
 
 # Types of memory allocators:
-So lets get into what they actually look in code and their types.
+So lets get into what they actually look in code and look at types of memory allocators.
 
 ## Linear allocator / bump allocators / arena allocators:
-Linear allocators are allocators that allocate a chunk of memory deteremined by a given size that you index into with a pointer. You generally keep track of 3 different points. A pointer to the start of the allocated buffer, a current pointer that keeps track of the current pointer we have into the memory space. And an end pointer to make sure we don't write the current pointer past the memory space we defined.
+Linear allocators are allocators that allocate a chunk of memory deteremined by a given size that you index into with a pointer. You generally keep track of 3 different pointers. A pointer to the start of the allocated buffer, a current pointer that keeps track of the current pointer we have into the memory space. And an end pointer to make sure we don't write the current pointer past the memory space we defined.
 
 A general structure for a linear allocation would be as such:
 
@@ -80,15 +80,18 @@ Deallocation would simply be fetching the chunk and setting the "is_used" field 
 Pretty practical and opens up to a ton of optimizations leading to really fast and space efficient memory allocators.
 
 ### Cons:
+A rather complex implementation that requires a linked list implementation, there are also a huge variety of different ways to implement them.
 
 ### Notes:
-Tons of modern memory allocators such as ``ptmalloc`` and ``dlmalloc`` use this type of allocator. Some allocators implemnet binning to store certain lengths of chunk ranges for quick access of free list. Some implement seperate linked lists for different sizes for even faster access to free chunks. Some implement a binary search tree that orders based on size or chunk address. A lot of allocators implement block splitting from recently fetched searching operations. A common optimization that ``free`` would implement would be block coalescing, where we combined adjacent free chunks into a big free chunk and mark it as new.
+Tons of modern memory allocators such as ``ptmalloc`` and ``dlmalloc`` use this type of allocator. Some allocators implement bins to store certain lengths of chunk ranges for quick access in the free list. Some implement seperate linked lists for different sizes for fast access to free chunks. Some implement a binary search tree that orders based on chunk size or chunk address. A lot of allocators implement block splitting from recently fetched searching operations. A common optimization that ``free`` would implement would be block coalescing, where we combined adjacent free chunks into a big free chunk and mark it as new.
 
 ## Other types
 Some types I haven't implemented but exist:
  * Buddy allocators
  * Stack allocators
  * Pool allocators (extremely practical)
+ * Fixed size allocators
+ * Slab allocators
 
 # Why would we write our own?
 Why would we write our own? Given memory allocator interfaces such as: ``malloc / free()`` and ``new / delete`` are designed to fit most general cases. This is very commonly done in video game engines and other areas of software engineering where hundreds of allocations are preformed.
@@ -316,6 +319,11 @@ void dsma_free(void *addr) {
     header->is_free = true;
 }
 
+```
+
+Example usage:
+```c
+
 int main(void) {
     int *ptr1 = dsma_alloc(16);
     *ptr1 = 5;
@@ -329,13 +337,24 @@ int main(void) {
     int *ptr4 = dsma_alloc(4);
     *ptr4 = 30;
 
+     printf(
+        "ptr1 address => %p\nptr1 value => %d\n\n"
+        "ptr2 address => %p\nptr2 value => %d\n\n"
+        "ptr3 address => %p\nptr3 value => %d\n\n"
+        "ptr4 address => %p\nptr4 value => %d\n",
+        (void *) ptr1, *ptr1,
+        (void *) ptr2, *ptr2,
+        (void *) ptr3, *ptr3,
+        (void *) ptr4, *ptr4
+    );
+
+
     dsma_free(ptr1);
     dsma_free(ptr2);
     dsma_free(ptr3);
     dsma_free(ptr4);
-}
 ```
 
 ## Design notes:
 * Neither implementation support thread-safety.
-* Generally optimized forms.
+* Generally non-optimized forms.
