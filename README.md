@@ -22,6 +22,11 @@ Mmap is ideal for really large chunk alloctations that are around 4096 bytes wor
 # What's the heap?
 We threw the word "heap" around a lot, but actually is the heap? The heap is a sesction of memory in our process that is constructed through the utilization of those functions / system calls we mentioned. Values stored on the heap are loaded at runtime.
 
+# Fragmentation
+A concept we need to preface over before deeping into memory allocator implementations would be fragementation. This is a major trade-off space when it comes to designing allocators. Fragmentation is a situation where we use memory inefficiently, we either have to go through extra measures to get the right memory allocation size or we don't have a right memory allocation size to begin with. 2 main types of fragmentation are such:
+  * External fragmentation: Resulting chunk had to have been split to satisfy the size constraint. 
+  * Internal fragmnetation: Resulting chunk was larger than what requested, leading to unused memory.
+
 # Types of memory allocators:
 So lets get into what they actually look in code and their types.
 
@@ -65,26 +70,25 @@ typedef struct _chunk_t {
 ```
 
 Upon initial allocation you'd mmap or sbrk a new chunk and insert it at the head later allocations you'll search the linked list of chunks to find a "free node". The algorithms for finding these free chunks are called free chunk searching algorithms. Some of these algorithms are such:
-  * First fit: 
-  * Best fit:
-  * Worst fit:
+  * First fit: Searches the free list for the first possible chunk it can take. This isn't ideal for fragmentation because we can find a really large node that satisfies the requirement size while there could possibly be smaller chunks to use.
+  * Best fit: Searches the free list for the most space optimal chunk to take. Ideal for fragmentation but more complex to implement.
 
 ### Deallocation:
+Deallocation would simply be fetching the chunk and setting the "is_used" field to false.
+
 ### Pros:
+Pretty practical and opens up to a ton of optimizations leading to really fast and space efficient memory allocators.
+
 ### Cons:
 
 ### Notes:
 Tons of modern memory allocators such as ``ptmalloc`` and ``dlmalloc`` use this type of allocator. Some allocators implemnet binning to store certain lengths of chunk ranges for quick access of free list. Some implement seperate linked lists for different sizes for even faster access to free chunks. Some implement a binary search tree that orders based on size or chunk address. A lot of allocators implement block splitting from recently fetched searching operations. A common optimization that ``free`` would implement would be block coalescing, where we conbaine adjencet free chunks into a big free chunk and mark it as new.There are a ton of optimizations in this field.
 
-## Pool allocators:
-### Allocation:
-### Deallocation:
-### Pros:
-### Cons:
+## Other types
+Some types I haven't implemented but exist:
 
-# Fragmentation:
 
 # Why would we write our own?
-Why would we wriute our own? Given memory allocator interfaces such as: ``malloc / free()``
+Why would we write our own? Given memory allocator interfaces such as: ``malloc / free()``
 
 # Implementations:
