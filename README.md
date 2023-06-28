@@ -28,10 +28,22 @@ So lets get into what they actually look in code and their types.
 ## Linear allocator / bump allocators / arena allocators:
 Linear allocators are allocators that allocate a chunk of memory deteremined by a given size that you index into with a pointer. You generally keep track of 3 different points. A pointer to the start of the allocated buffer, a current pointer that keeps track of the current pointer we have into the memory space. And an end pointer to make sure we don't write the current pointer past the memory space we defined.
 
+A general structure for a linear allocation would be as such:
+
+```c
+typedef struct _linear_allocator {
+  char *start, curr, end;
+} Linear_allocator;
+```
+
 ### Allocation:
+The allocation would consist of altering the ``curr`` pointer by some amount
 ### Deallocation:
+The deallocation would be resetting the pointers. We can't individually free allocations, we have to free the entire chunk at the same time. It would look like ``start = curr = end = 0;``
 ### Pros:
+Extremely fast and a nice layer of abstraction which provides an easy use where instead of doing multiple allocations and storing information, we allocate 1 big chunk and index into it.
 ### Cons:
+We can't individually free allocations in any order. We have to reset the entire chunk. 
 
 ## Free list allocators:
 Free-list allocators are a technique for memory allocators where we store the allocation chunks in a linked list. The linked list nodes would generally contain a size field (keeps track of the size of the chunk), is freed field (to determine if the currently looked at chunk is free or not), and a next pointer (next node in the linked list). Now there are 2 types of free-list allocators, those being: explicit and implicit free lists.
@@ -40,9 +52,25 @@ Free-list allocators are a technique for memory allocators where we store the al
 * Explicit free list: Explicitly defines a structure of chunks that contain free and used nodes and are differentiated between with a flag determining if the currently loked at node is free or not.
 
 ### Allocation:
+Allocation would consist of inserting these chunk like structures defined as: 
+```c
+typedef struct _chunk_t {
+  size_t size;
+  bool is_used;
+  struct _chunk_t *fd;
+} chunk_t;
+```
+
+Upon initial allocation you'd mmap or sbrk a new chunk and insert it at the head later allocations you'll search the linked list of chunks to find a "free node". The algorithms for finding these free chunks are called free block searching algorithms. Some of these algorithms are such:
+  * First fit: 
+  * Best fit:
+  & Worst fit
+
 ### Deallocation:
 ### Pros:
 ### Cons:
+
+# Fragmentation:
 
 # Why would we write our own?
 
