@@ -82,13 +82,260 @@ Pretty practical and opens up to a ton of optimizations leading to really fast a
 ### Cons:
 
 ### Notes:
-Tons of modern memory allocators such as ``ptmalloc`` and ``dlmalloc`` use this type of allocator. Some allocators implemnet binning to store certain lengths of chunk ranges for quick access of free list. Some implement seperate linked lists for different sizes for even faster access to free chunks. Some implement a binary search tree that orders based on size or chunk address. A lot of allocators implement block splitting from recently fetched searching operations. A common optimization that ``free`` would implement would be block coalescing, where we conbaine adjencet free chunks into a big free chunk and mark it as new.There are a ton of optimizations in this field.
+Tons of modern memory allocators such as ``ptmalloc`` and ``dlmalloc`` use this type of allocator. Some allocators implemnet binning to store certain lengths of chunk ranges for quick access of free list. Some implement seperate linked lists for different sizes for even faster access to free chunks. Some implement a binary search tree that orders based on size or chunk address. A lot of allocators implement block splitting from recently fetched searching operations. A common optimization that ``free`` would implement would be block coalescing, where we combined adjacent free chunks into a big free chunk and mark it as new.
 
 ## Other types
 Some types I haven't implemented but exist:
-
+ * Buddy allocators
+ * Stack allocators
+ * Pool allocators (extremely practical)
 
 # Why would we write our own?
-Why would we write our own? Given memory allocator interfaces such as: ``malloc / free()``
+Why would we write our own? Given memory allocator interfaces such as: ``malloc / free()`` and ``new / delete`` are designed to fit most general cases. This is very commonly done in video game engines and other areas of software engineering where hundreds of allocations are preformed.
 
 # Implementations:
+
+## Linear allocator:
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+
+#define align_to_word(size) (size + (sizeof(void *) - 1)) & ~(sizeof(void *) - 1)
+
+typedef struct _Allocator_t {
+    char *start, *end, *curr;
+    size_t capacity;
+} Allocator_t;
+
+Allocator_t *new_allocator(size_t capacity) {
+    if(!capacity) {
+        return NULL;
+    }
+
+    Allocator_t *alloc = calloc(1, sizeof(*alloc));
+    if(!alloc) {
+        return NULL;
+    }
+    
+    alloc->start = malloc(capacity);
+    if(!alloc->start) {
+        return NULL;
+    }
+
+    alloc->capacity = capacity;
+    alloc->curr = alloc->start;
+    alloc->end = alloc->start + capacity;
+
+    return alloc;
+}
+
+void *allocator_alloc(Allocator_t *alloc, size_t offset) {
+    if(!alloc || !offset) {
+        return NULL;
+    }
+
+    offset = align_to_word(offset);
+
+    if(offset > alloc->capacity) {
+        return NULL;
+    }
+    
+    if(alloc->curr + offset <= alloc->end) {
+        char *tmp = alloc->curr;
+        alloc->curr += offset;
+        
+        return tmp;
+    }
+
+    return NULL;
+}
+
+void allocator_reset(Allocator_t *alloc) {
+    if(!alloc || !alloc->start) {
+        return;
+    }
+
+    free(alloc->start);
+    alloc->curr  = NULL;
+    alloc->end   = NULL;
+    alloc->start = NULL;
+}
+
+void print_state(Allocator_t *alloc) {
+    if(!alloc) {
+        return;
+    }
+
+    printf("Curr: %p\n"
+           "Start: %p\n"
+           "End: %p\n", alloc->curr, alloc->start, alloc->end);
+}
+```
+
+Example usage:
+```c
+int main(void) {
+    Allocator_t *alloc = new_allocator(100);
+    
+    int *ptr1 = allocator_alloc(alloc, 5 * sizeof(int));
+    for(int i = 0; i < 5; ++i) {
+        ptr1[i] = i;
+        printf("Ptr1[%d] => %d\n", i, ptr1[i]);
+    }
+
+    putchar('\n');
+
+    char char_arr[] = { 'a', 'b', 'c', 'e', 'd'},
+    *ptr2 = allocator_alloc(alloc, 5);
+    
+    for(int i = 0; i < 5; ++i) {
+        ptr2[i] = char_arr[i];
+        printf("Ptr2[%d] => %c\n", i, ptr2[i]);
+    }
+
+    putchar('\n');
+
+    double double_arr[] = { 10.00, 20.00, 30.00, 40.00, 50.00 },
+    *ptr3 = allocator_alloc(alloc, 5 * sizeof(int));
+
+    for(int i = 0; i < 5; ++i) {
+        ptr3[i] = double_arr[i];
+        printf("Ptr3[%d] => %lf\n", i, ptr3[i]);
+    }
+
+    putchar('\n');
+
+    print_state(alloc);
+    allocator_reset(alloc);
+    print_state(alloc);
+}
+```
+
+## Explicit free list
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <stdbool.h>
+#include <sys/mman.h>
+
+typedef struct _chunk_t {
+    size_t size;
+    bool is_free;
+
+    struct _chunk_t *fd;
+} chunk_t;
+
+typedef struct _free_list_t {
+    chunk_t *head, *tail;
+} free_list_t;
+
+#define align_to_word(size) (size + (sizeof(void *) - 1)) & ~(sizeof(void *) - 1)
+
+#define LASSERT(condition, msg) \
+    do \
+    { \
+        if(!(condition)) \
+        { \
+            fprintf(stderr, \
+			        "[*] Process terminated! 'LASSERT()' failed!\n" \
+			        "Condition\t: {%s}\n" \
+			        "Function\t: {%s}\n" \
+			        "Failed in file\t: {%s}\n" \
+			        "At line \t: {%d}\n", #condition, __func__, __FILE__, __LINE__); \
+            fprintf(stderr, "Debug log: %s\n", msg); \
+            exit(1); \
+        } \
+    } while(0) \
+
+free_list_t free_list = { .head = NULL, .tail = NULL };
+
+static inline __always_inline chunk_t *first_fit(size_t size) {
+    LASSERT(size, "Invalid size!");
+ 
+    for(chunk_t *tmp = free_list.head; tmp; tmp = tmp->fd) {
+        if(tmp->size >= size && tmp->is_free) {
+            return tmp;
+        }
+    }
+    
+    return NULL;
+}
+
+static inline __always_inline void insert_chunk(chunk_t *chunk) {
+    LASSERT(chunk, "Chunk is NULL");
+
+    if(!free_list.head) {
+        free_list.head = free_list.tail = chunk;
+        return;
+    }
+
+    free_list.tail->fd = chunk;
+    free_list.tail = free_list.tail->fd;
+}
+
+chunk_t *request_space(size_t size) {    
+    void *memory = mmap(NULL, sizeof(chunk_t) + size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    LASSERT(memory != MAP_FAILED, "Failure to map memory!");
+    
+    chunk_t *chunk = (chunk_t *) memory;
+    chunk->size = size;
+    chunk->is_free = false;
+    chunk->fd = NULL;
+
+    insert_chunk(chunk);
+
+    return chunk;
+}
+
+void *dsma_alloc(size_t size) {
+    LASSERT(size, "Invalid allocation size!");
+
+    size = align_to_word(size);
+
+    chunk_t *chunk = first_fit(size);
+
+    if(!chunk) {
+        chunk = request_space(size);
+
+        if(!chunk) {
+            return NULL;
+        }
+    }
+
+    chunk->is_free = false;
+
+    return (chunk + 1);
+}
+
+void dsma_free(void *addr) {
+    LASSERT(addr, "Trying to free invalid address!");
+    
+    chunk_t *header = (chunk_t *)addr - 1;
+    header->is_free = true;
+}
+
+int main(void) {
+    int *ptr1 = dsma_alloc(16);
+    *ptr1 = 5;
+
+    int *ptr2 = dsma_alloc(100);
+    *ptr2 = 10;
+
+    int *ptr3 = dsma_alloc(8);
+    *ptr3 = 20;
+
+    int *ptr4 = dsma_alloc(4);
+    *ptr4 = 30;
+
+    dsma_free(ptr1);
+    dsma_free(ptr2);
+    dsma_free(ptr3);
+    dsma_free(ptr4);
+}
+```
+
+## Design notes:
+* Neither implementation support thread-safety.
+* Generally optimized forms.
