@@ -6,9 +6,9 @@ Educational repository to briefly go over practical implementations of memory al
 
 [How?](#How?)
 
-[Memory visualization](#Addressing space visualization)
+[Memory visualization](#visualization)
 
-[What's the heap?][#What's the heap]
+[What's the heap?][#heap]
 
 [Implementations](#Implementations)
 
