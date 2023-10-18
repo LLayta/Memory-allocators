@@ -17,7 +17,7 @@ Educational repository to briefly go over practical implementations of memory al
 [Implementations](#Implementations)
 
 # Why?
-Why do we care about memory allocators? Memory allocators are an interface that allow us to preform *dynamic memory allocation* which is when we store long lived values in a programs' memory. The size of these allocations are determined at run-time. 
+Why do we care about memory allocators? We care about implementing memory allocators because malloc et al aren't designed for specific allocation patterns and optimizations, they're designed for simplicity and generalization. So in instances where we allocate a ton of memory to store the same types of things in memory, we want to be able to design our own memory allocator to optimization these situations. These are commonly used by game engines, operating systems, embedded systems, network architectures, and highly optimized forms of data structures. 
 
 # How?
 Memory allocators (typically) utilize a part of processes' memory space called the "heap". We can dynamically allocate data onto the heap in 2 main ways on linux:
