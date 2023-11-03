@@ -22,11 +22,11 @@ Memory allocators (typically) utilize a part of processes' memory space called t
   * sbrk function: Alters the program break to allocate space directly above the data segment. (Program break is a pointer to the top of the data segment on the first allocation but after allocations it'll be a pointer to the top of the heap). See figure.1 for visualization.
 
 # Why?
-Why do we care about memory allocators? We care about implementing memory allocators because malloc et al aren't designed for specific allocation patterns and optimizations, they're designed for simplicity and generalization. So in instances where we allocate a ton of memory to store the same types of things in memory, we want to be able to design our own memory allocator to optimization these situations. These are commonly used by game engines, operating systems, embedded systems, network architectures, and highly optimized forms of data structures. 
+Why do we care about memory allocators? We care about implementing memory allocators because malloc et al aren't designed for specific allocation patterns and optimizations, they're designed for simplicity and generalization. So, in instances where we allocate a ton of memory to store objects of the same type / size in memory, we'd want to be able to design our own memory allocator to optimization these situations. These ideas are commonly used by game engines, operating systems, embedded systems, network architectures, and highly optimized forms of data structures. 
 
 # Visualization:
 ![Addressing space](imgs/figure1.png)
-figure1.
+figure 1.
 
 The "memory-mapped region" stores mmap'd chunks.
 The section labeled "heap" stores the sbrk allocated chunks.
