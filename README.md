@@ -2,9 +2,9 @@
 Educational repository to briefly go over practical implementations of memory allocators and theoretical background of them.
 
 # Contents 
-[Why?](#Why?)
-
 [How?](#How?)
+
+[Why?](#Why?)
 
 [Memory visualization](#Visualization)
 
@@ -16,13 +16,13 @@ Educational repository to briefly go over practical implementations of memory al
 
 [Implementations](#Implementations)
 
-# Why?
-Why do we care about memory allocators? We care about implementing memory allocators because malloc et al aren't designed for specific allocation patterns and optimizations, they're designed for simplicity and generalization. So in instances where we allocate a ton of memory to store the same types of things in memory, we want to be able to design our own memory allocator to optimization these situations. These are commonly used by game engines, operating systems, embedded systems, network architectures, and highly optimized forms of data structures. 
-
 # How?
-Memory allocators (typically) utilize a part of processes' memory space called the "heap". We can dynamically allocate data onto the heap in 2 main ways on linux:
+Memory allocators (typically) utilize a part of processes' memory space called the "heap" to allocate memory. We can dynamically allocate data onto the heap in 2 main ways on linux:
   * mmap system call: Maps a chunk of memory that is utilized by our program that we store in between the data segment (.rodata, .text and what not) and the stack. See figure.1 for visualization.
   * sbrk function: Alters the program break to allocate space directly above the data segment. (Program break is a pointer to the top of the data segment on the first allocation but after allocations it'll be a pointer to the top of the heap). See figure.1 for visualization.
+
+# Why?
+Why do we care about memory allocators? We care about implementing memory allocators because malloc et al aren't designed for specific allocation patterns and optimizations, they're designed for simplicity and generalization. So in instances where we allocate a ton of memory to store the same types of things in memory, we want to be able to design our own memory allocator to optimization these situations. These are commonly used by game engines, operating systems, embedded systems, network architectures, and highly optimized forms of data structures. 
 
 # Visualization:
 ![Addressing space](imgs/figure1.png)
@@ -63,10 +63,10 @@ The allocation would consist of altering the ``curr`` pointer by some amount
 The deallocation would be resetting the pointers. We can't individually free allocations, we have to free the entire chunk at the same time. It would look like ``start = curr = end = 0;``
 
 ### Pros:
-Extremely fast and a nice layer of abstraction which provides an easy use where instead of doing multiple allocations and storing information, we allocate 1 big chunk and index into it.
+Extremely fast and a nice layer of abstraction which provides an easy to use interface where instead of doing multiple separate allocations and storing information, we allocate 1 big chunk and index into it.
 
 ### Cons:
-We can't individually free allocations in any order. We have to reset the entire chunk. 
+We can't individually free allocations in any order. We have to reset the entire chunk if we want to deallocate the memory. 
 
 ## Free list allocators:
 Free-list allocators are a technique for memory allocators where we store the allocation chunks in a linked list. The linked list nodes would generally contain a size field (keeps track of the size of the chunk), is freed field (to determine if the currently looked at chunk is free or not), and a next pointer (next node in the linked list). Now there are 2 types of free-list allocators, those being: explicit and implicit free lists.
@@ -107,9 +107,6 @@ Some types I haven't implemented but exist:
  * Pool allocators (extremely practical)
  * Fixed size allocators
  * Slab allocators
-
-# Why would we write our own?
-Why would we write our own? Given memory allocator interfaces such as: ``malloc / free()`` and ``new / delete`` are designed to fit most general cases. This is very commonly done in video game engines and other areas of software engineering where hundreds of allocations are preformed.
 
 # Implementations:
 
@@ -201,7 +198,7 @@ void delete_allocator(Allocator_t *alloc) {
 Example usage:
 ```c
 int main(void) {
-       Allocator_t *alloc = new_allocator(100);
+    Allocator_t *alloc = new_allocator(100);
     
     int *ptr1 = allocator_alloc(alloc, 5 * sizeof(int));
     for(int i = 0; i < 5; ++i) {
